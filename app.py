@@ -5,6 +5,29 @@ from datetime import date, timedelta
 import plotly.express as px
 import plotly.graph_objects as go
 
+st.set_page_config(
+    page_title="Cartellino",
+    page_icon=":clock1:",
+    layout="wide"
+)
+
+st.header("Dashboard Cartellino", divider=True)
+
+st.subheader("Dati giornalieri :calendar:")
+st.text("I dati mostrati in questa tabella vengono letti da Google Drive. L'intervallo predefinito è una finestra di 15 giorni intorno alla data odierna (7 giorni prima e 7 giorni dopo)")
+
+if 'date_from' not in st.session_state:
+    # st.session_state.date_from = date.today() - timedelta(days=7)
+    st.session_state.date_from = date(2025, 1, 1)
+if 'date_to' not in st.session_state:
+    # st.session_state.date_to = date.today() + timedelta(days=7)
+    st.session_state.date_to = date(2025, 1, 31)
+
+def validate_dates(date_from, date_to):
+    if date_from >= date_to:
+        st.error("La data 'A' deve essere maggiore della data 'Da'")
+        st.stop()
+
 # Acquisizione dati da Google Drive
 # #################################
 df = pd.read_csv("https://docs.google.com/spreadsheets/d/15HoJRe3AGq3VAgXN8gcO3cF0vfezPR6t0LvTc2R4WFo/export?format=csv&gid=896724717", parse_dates=['DATA'], date_format='%d/%m/%Y')
@@ -13,6 +36,23 @@ df = pd.read_csv("https://docs.google.com/spreadsheets/d/15HoJRe3AGq3VAgXN8gcO3c
 # #################################
 # Converti la colonna 'DATA' in formato datetime, se non lo è già
 df['DATA'] = pd.to_datetime(df['DATA'])
+
+col_A, col_B = st.columns(2)
+
+with col_A:
+    date_from = st.date_input(label="Da", format="DD/MM/YYYY", key="date_from")
+    # date_from = st.date_input(label="Da", value=date(2025, 1, 1), format="DD/MM/YYYY", key="date_from")
+
+with col_B:
+    date_to = st.date_input(label="A", format="DD/MM/YYYY", key="date_to")
+    # date_to = st.date_input(label="A", value=date(2025, 1, 15), format="DD/MM/YYYY", key="date_to")
+
+# Controlla la validità delle date
+validate_dates(date_from, date_to)
+
+# Filtra il DataFrame in base alle date
+df = df[(df['DATA'] >= pd.to_datetime(st.session_state.date_from)) & (df['DATA'] <= pd.to_datetime(st.session_state.date_to))]
+
 # Separa il giorno della settimana dalla data (lunedì = 0, domenica = 6)
 df['SETTIMANA'] = df['DATA'].dt.isocalendar().week
 # Calcolo del dovuto giornaliero in base alle condizioni
@@ -64,8 +104,8 @@ df['DOVUTO_GIORNALIERO_FORMATTED'] = df['DOVUTO GIORNALIERO'].apply(format_saldo
 df['ORE_LAVORATE_FORMATTED'] = df['ORE LAVORATE'].apply(format_saldo)
 
 # Saldo generale annuale
+# #########################
 saldo_generale_annuale = df['SALDO GIORNALIERO'].sum()
-print(f"Saldo Generale Annuale: {format_saldo(saldo_generale_annuale)}")
 
 # Saldo settimanale
 # #########################
@@ -75,7 +115,6 @@ df['DATA'] = pd.to_datetime(df['DATA'], dayfirst=True)
 df_settimanale = df.resample('W-SUN', on='DATA').sum()
 df_settimanale['SETTIMANA'] = df_settimanale.index.isocalendar().week
 df_settimanale['SALDO_SETT_FORMATTED'] = df_settimanale['SALDO GIORNALIERO'].apply(format_saldo)
-
 
 # Saldo mensile
 # #########################
@@ -109,41 +148,6 @@ ddf.fillna('-', inplace=True)
 
 # Streamlit app
 # #################################
-st.set_page_config(
-    page_title="Cartellino",
-    page_icon=":clock1:",
-    layout="wide"
-)
-st.header("Dashboard Cartellino", divider=True)
-
-st.subheader("Dati giornalieri :calendar:")
-st.text("I dati mostrati in questa tabella vengono letti da Google Drive. L'intervallo predefinito è una finestra di 15 giorni intorno alla data odierna (7 giorni prima e 7 giorni dopo)")
-
-
-if 'date_from' not in st.session_state:
-    st.session_state.date_from = date.today() - timedelta(days=7)
-    st.session_state.date_to = date.today() + timedelta(days=7)
-
-def validate_dates(date_from, date_to):
-    if date_from >= date_to:
-        st.error("La data 'A' deve essere maggiore della data 'Da'")
-        st.stop()
-
-col_A, col_B = st.columns(2)
-
-with col_A:
-    # date_from = st.date_input(label="Da", value=date.today() - timedelta(days=7), format="DD/MM/YYYY", key="date_from", on_change=set_dates)
-    date_from = st.date_input(label="Da", value=date(2025, 1, 1), format="DD/MM/YYYY", key="date_from")
-
-with col_B:
-    # date_to = st.date_input(label="A", value=date.today() + timedelta(days=7), format="DD/MM/YYYY", key="date_to", on_change=set_dates)
-    date_to = st.date_input(label="A", value=date(2025, 1, 15), format="DD/MM/YYYY", key="date_to")
-
-# Controlla la validità delle date
-validate_dates(date_from, date_to)
-
-# Filtra il DataFrame in base alle date
-ddf = ddf[(ddf['DATA'] >= pd.to_datetime(st.session_state.date_from)) & (ddf['DATA'] <= pd.to_datetime(st.session_state.date_to))]
 
 st.dataframe(
         ddf.style.apply(row_color, axis=1),
@@ -166,7 +170,10 @@ st.dataframe(
         hide_index=True
     )
 
-st.metric(label="Saldo Generale Annuale (hh:mm)", value=format_saldo(saldo_generale_annuale))
+st.metric(
+    label="Saldo Generale Annuale (hh:mm) nell'intervallo selezionato", 
+    value=format_saldo(saldo_generale_annuale)
+)
 
 col1, col2 = st.columns(2)
 
