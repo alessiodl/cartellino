@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from datetime import date
+from datetime import date, timedelta
 import plotly.express as px
 import plotly.graph_objects as go
 
@@ -87,23 +87,66 @@ df_mensile = df.resample('ME', on='DATA').sum()
 df_mensile['MESE'] = df_mensile.index.strftime('%b-%Y')
 df_mensile['SALDO_MENSILE_FORMATTED'] = df_mensile['SALDO GIORNALIERO'].apply(format_saldo)
 
-
+# DDF per visualizzazione tabella
 ddf = df[['DATA', 'GIORNO', 'SETTIMANA', 'TIPOLOGIA', 'DETTAGLI', 'ORE RICHIESTE', 'ENTRATA_1', 'ENTRATA_2', 'USCITA_1', 'USCITA_2', 'PAUSA', 'DOVUTO_GIORNALIERO_FORMATTED', 'ORE_LAVORATE_FORMATTED','SALDO_GIORNALIERO_FORMATTED' ]].copy()
 
+def row_color(row):
+    w_color = 'background-color: salmon; color: white;'
+    f_color = 'background-color: crimson; color: white; font-weight: bold;'
+    p_color = 'background-color: mediumseagreen; color: white; font-weight: bold;'
+    # Applica il colore 
+    if row['GIORNO'] in ['SAB', 'DOM']:
+        return [w_color] * len(row)
+    elif row['TIPOLOGIA'] == 'FESTIVITA':
+        return [f_color] * len(row)
+    elif row['TIPOLOGIA'] == 'FERIE':
+        return [p_color] * len(row)
+    else:
+        return [''] * len(row)
+
 ddf.fillna('-', inplace=True)
+
 
 # Streamlit app
 # #################################
 st.set_page_config(
     page_title="Cartellino",
-    page_icon=":calendar:",
+    page_icon=":clock1:",
     layout="wide"
 )
 st.header("Dashboard Cartellino", divider=True)
 
-st.subheader("Dati giornalieri")
+st.subheader("Dati giornalieri :calendar:")
+st.text("I dati mostrati in questa tabella vengono letti da Google Drive. L'intervallo predefinito è una finestra di 15 giorni intorno alla data odierna (7 giorni prima e 7 giorni dopo)")
+
+
+if 'date_from' not in st.session_state:
+    st.session_state.date_from = date.today() - timedelta(days=7)
+    st.session_state.date_to = date.today() + timedelta(days=7)
+
+def validate_dates(date_from, date_to):
+    if date_from >= date_to:
+        st.error("La data 'A' deve essere maggiore della data 'Da'")
+        st.stop()
+
+col_A, col_B = st.columns(2)
+
+with col_A:
+    # date_from = st.date_input(label="Da", value=date.today() - timedelta(days=7), format="DD/MM/YYYY", key="date_from", on_change=set_dates)
+    date_from = st.date_input(label="Da", value=date(2025, 1, 1), format="DD/MM/YYYY", key="date_from")
+
+with col_B:
+    # date_to = st.date_input(label="A", value=date.today() + timedelta(days=7), format="DD/MM/YYYY", key="date_to", on_change=set_dates)
+    date_to = st.date_input(label="A", value=date(2025, 1, 15), format="DD/MM/YYYY", key="date_to")
+
+# Controlla la validità delle date
+validate_dates(date_from, date_to)
+
+# Filtra il DataFrame in base alle date
+ddf = ddf[(ddf['DATA'] >= pd.to_datetime(st.session_state.date_from)) & (ddf['DATA'] <= pd.to_datetime(st.session_state.date_to))]
+
 st.dataframe(
-        ddf,
+        ddf.style.apply(row_color, axis=1),
         column_config={
             "DATA": st.column_config.DateColumn(
                 format="DD/MM/YYYY"
@@ -128,12 +171,11 @@ st.metric(label="Saldo Generale Annuale (hh:mm)", value=format_saldo(saldo_gener
 col1, col2 = st.columns(2)
 
 with col1:
-    st.subheader("Report settimanale")
+    st.subheader("Report settimanale :bookmark_tabs:")
     st.text("Questa sezione mostra il saldo aggregato per settimana")
     tab1, tab2 = st.tabs(["Grafico", "Dati"])
     
     with tab1:
-        
         # Converti timedelta in ore decimali per la rappresentazione numerica
         df_settimanale['SALDO_GIORNALIERO_ORE'] = df_settimanale['SALDO GIORNALIERO'].dt.total_seconds() / 3600
         # Applica la funzione al saldo giornaliero per formattare le etichette
@@ -170,7 +212,7 @@ with col1:
         ) 
 
 with col2:
-    st.subheader("Report mensile")
+    st.subheader("Report mensile :bookmark_tabs:")
     st.text("Questa sezione mostra il saldo aggregato per mese")
     tab1, tab2 = st.tabs(["Grafico", "Dati"])
     
