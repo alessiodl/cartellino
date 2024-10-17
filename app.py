@@ -37,6 +37,7 @@ df = pd.read_csv("https://docs.google.com/spreadsheets/d/15HoJRe3AGq3VAgXN8gcO3c
 # Converti la colonna 'DATA' in formato datetime, se non lo è già
 df['DATA'] = pd.to_datetime(df['DATA'])
 
+
 col_A, col_B = st.columns(2)
 
 with col_A:
@@ -103,9 +104,9 @@ df['SALDO_GIORNALIERO_FORMATTED'] = df['SALDO GIORNALIERO'].apply(format_saldo)
 df['DOVUTO_GIORNALIERO_FORMATTED'] = df['DOVUTO GIORNALIERO'].apply(format_saldo)
 df['ORE_LAVORATE_FORMATTED'] = df['ORE LAVORATE'].apply(format_saldo)
 
-# Saldo generale annuale
+# Saldo generale 
 # #########################
-saldo_generale_annuale = df['SALDO GIORNALIERO'].sum()
+saldo_generale = df['SALDO GIORNALIERO'].sum()
 
 # Saldo settimanale
 # #########################
@@ -128,17 +129,22 @@ df_mensile['SALDO_MENSILE_FORMATTED'] = df_mensile['SALDO GIORNALIERO'].apply(fo
 
 # DDF per visualizzazione tabella
 ddf = df[['DATA', 'GIORNO', 'SETTIMANA', 'TIPOLOGIA', 'DETTAGLI', 'ORE RICHIESTE', 'ENTRATA_1', 'ENTRATA_2', 'USCITA_1', 'USCITA_2', 'PAUSA', 'DOVUTO_GIORNALIERO_FORMATTED', 'ORE_LAVORATE_FORMATTED','SALDO_GIORNALIERO_FORMATTED' ]].copy()
+ddf['ORE RICHIESTE'] = pd.to_timedelta(ddf['ORE RICHIESTE'], unit='h')
+ddf['ORE RICHIESTE'] = ddf['ORE RICHIESTE'].apply(format_saldo)
 
 def row_color(row):
-    w_color = 'background-color: salmon; color: white;'
+    w_color = 'background-color: lightsalmon; color: white;'
     f_color = 'background-color: crimson; color: white; font-weight: bold;'
-    p_color = 'background-color: mediumseagreen; color: white; font-weight: bold;'
+    v_color = 'background-color: mediumseagreen; color: white; font-weight: bold;'
+    p_color = 'background-color: olive; color: white; font-weight: bold;'
     # Applica il colore 
     if row['GIORNO'] in ['SAB', 'DOM']:
         return [w_color] * len(row)
     elif row['TIPOLOGIA'] == 'FESTIVITA':
         return [f_color] * len(row)
     elif row['TIPOLOGIA'] == 'FERIE':
+        return [v_color] * len(row)
+    elif row['TIPOLOGIA'] == 'PERMESSO' or row['TIPOLOGIA'] == 'VISITA MEDICA' or row['TIPOLOGIA'] == 'RECUPERO ORE RICERCATORI':
         return [p_color] * len(row)
     else:
         return [''] * len(row)
@@ -150,34 +156,34 @@ ddf.fillna('-', inplace=True)
 # #################################
 
 st.dataframe(
-        ddf.style.apply(row_color, axis=1),
-        column_config={
-            "DATA": st.column_config.DateColumn(
-                format="DD/MM/YYYY"
-            ),
-            "SALDO_GIORNALIERO_FORMATTED": st.column_config.Column(
-                label="SALDO GIORNALIERO",
-                
-            ),
-            "DOVUTO_GIORNALIERO_FORMATTED": st.column_config.Column(
-                label="DOVUTO GIORNALIERO",
-            ),
-            "ORE_LAVORATE_FORMATTED": st.column_config.Column(
-                label="ORE LAVORATE",
-            ),
-        }, 
-        use_container_width=True, 
-        hide_index=True
-    )
+    ddf.style.apply(row_color, axis=1),
+    column_config={
+        "DATA": st.column_config.DateColumn(
+            format="DD/MM/YYYY"
+        ),
+        "SALDO_GIORNALIERO_FORMATTED": st.column_config.Column(
+            label="SALDO GIORNALIERO",    
+        ),
+        "DOVUTO_GIORNALIERO_FORMATTED": st.column_config.Column(
+            label="DOVUTO GIORNALIERO",
+        ),
+        "ORE_LAVORATE_FORMATTED": st.column_config.Column(
+            label="ORE LAVORATE",
+        )
+    }, 
+    use_container_width=True, 
+    hide_index=True
+)
 
 st.metric(
-    label="Saldo Generale Annuale (hh:mm) nell'intervallo selezionato", 
-    value=format_saldo(saldo_generale_annuale)
+    label="Saldo Generale (hh:mm) nell'intervallo selezionato", 
+    value=str(format_saldo(saldo_generale)).split(":")[0]+" ore e "+str(format_saldo(saldo_generale)).split(":")[1]+" minuti"
 )
 
 col1, col2 = st.columns(2)
 
 with col1:
+
     st.subheader("Report settimanale :bookmark_tabs:")
     st.text("Questa sezione mostra il saldo aggregato per settimana")
     tab1, tab2 = st.tabs(["Grafico", "Dati"])
@@ -219,6 +225,7 @@ with col1:
         ) 
 
 with col2:
+
     st.subheader("Report mensile :bookmark_tabs:")
     st.text("Questa sezione mostra il saldo aggregato per mese")
     tab1, tab2 = st.tabs(["Grafico", "Dati"])
