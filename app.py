@@ -10,15 +10,13 @@ locale.setlocale(locale.LC_TIME, 'it_IT.UTF-8')
 
 
 st.set_page_config(
-    page_title="Cartellino",
+    page_title="My Cartellino",
     page_icon=":clock1:",
     layout="wide"
 )
 
-st.header("Dashboard Cartellino", divider=True)
-
-st.subheader("Dati giornalieri :calendar:")
-st.text("I dati mostrati in questa tabella vengono letti da Google Drive. L'intervallo predefinito è una finestra di 15 giorni intorno alla data odierna (7 giorni prima e 7 giorni dopo)")
+st.header("My Cartellino", divider=True)
+st.markdown("I dati utilizzati in questa applicazione provengono da Google Sheets e vengono aggiornati quotidianamente")
 
 if 'date_from' not in st.session_state:
     # st.session_state.date_from = date.today() - timedelta(days=7)
@@ -29,7 +27,7 @@ if 'date_to' not in st.session_state:
 
 def validate_dates(date_from, date_to):
     if date_from >= date_to:
-        st.error("La data 'A' deve essere maggiore della data 'Da'")
+        st.error("La data 'Al' deve essere maggiore della data 'Dal'")
         st.stop()
 
 # Acquisizione dati da Google Drive
@@ -41,15 +39,16 @@ df = pd.read_csv("https://docs.google.com/spreadsheets/d/15HoJRe3AGq3VAgXN8gcO3c
 # Converti la colonna 'DATA' in formato datetime, se non lo è già
 df['DATA'] = pd.to_datetime(df['DATA'])
 
+st.logo(image="images/izs_marchio.png", size="large")
 
-col_A, col_B = st.columns(2)
+with st.sidebar:
 
-with col_A:
-    date_from = st.date_input(label="Da", format="DD/MM/YYYY", key="date_from")
+    st.caption("Seleziona un intervallo di date")
+
+    date_from = st.date_input(label="Dal", format="DD/MM/YYYY", key="date_from")
     # date_from = st.date_input(label="Da", value=date(2025, 1, 1), format="DD/MM/YYYY", key="date_from")
 
-with col_B:
-    date_to = st.date_input(label="A", format="DD/MM/YYYY", key="date_to")
+    date_to = st.date_input(label="Al", format="DD/MM/YYYY", key="date_to")
     # date_to = st.date_input(label="A", value=date(2025, 1, 15), format="DD/MM/YYYY", key="date_to")
 
 # Controlla la validità delle date
@@ -158,114 +157,117 @@ ddf.fillna('-', inplace=True)
 
 # Streamlit app
 # #################################
+with st.expander("Dati del cartellino", expanded=True):
+    st.subheader(":calendar: Registrazioni giornaliere")
+    st.dataframe(
+        ddf.style.apply(row_color, axis=1),
+        column_config={
+            "DATA": st.column_config.DateColumn(
+                format="DD/MM/YYYY"
+            ),
+            "SALDO_GIORNALIERO_FORMATTED": st.column_config.Column(
+                label="SALDO GIORNALIERO",    
+            ),
+            "DOVUTO_GIORNALIERO_FORMATTED": st.column_config.Column(
+                label="DOVUTO GIORNALIERO",
+            ),
+            "ORE_LAVORATE_FORMATTED": st.column_config.Column(
+                label="ORE LAVORATE",
+            )
+        }, 
+        use_container_width=True, 
+        hide_index=True
+    )
 
-st.dataframe(
-    ddf.style.apply(row_color, axis=1),
-    column_config={
-        "DATA": st.column_config.DateColumn(
-            format="DD/MM/YYYY"
-        ),
-        "SALDO_GIORNALIERO_FORMATTED": st.column_config.Column(
-            label="SALDO GIORNALIERO",    
-        ),
-        "DOVUTO_GIORNALIERO_FORMATTED": st.column_config.Column(
-            label="DOVUTO GIORNALIERO",
-        ),
-        "ORE_LAVORATE_FORMATTED": st.column_config.Column(
-            label="ORE LAVORATE",
-        )
-    }, 
-    use_container_width=True, 
-    hide_index=True
-)
+with st.container(border=True):
+    st.subheader(":chart_with_upwards_trend: Saldo Generale nel periodo selezionato")
+    st.metric(label="Saldo Generale (hh:mm)", value=str(format_saldo(saldo_generale)).split(":")[0]+" ore e "+str(format_saldo(saldo_generale)).split(":")[1]+" minuti")
 
-st.metric(
-    label="Saldo Generale (hh:mm) nell'intervallo selezionato", 
-    value=str(format_saldo(saldo_generale)).split(":")[0]+" ore e "+str(format_saldo(saldo_generale)).split(":")[1]+" minuti"
-)
 
 col1, col2 = st.columns(2)
 
 with col1:
 
-    st.subheader("Dati aggregati per settimana :bookmark_tabs:")
+    with st.container(border=True):
 
-    tab1, tab2 = st.tabs(["Grafico", "Dati"])
+        st.subheader(":bar_chart: Dati settimanali")
+
+        tab1, tab2 = st.tabs(["Grafico", "Dati"])
     
-    with tab1:
-        # Converti timedelta in ore decimali per la rappresentazione numerica
-        df_settimanale['SALDO_GIORNALIERO_ORE'] = df_settimanale['SALDO GIORNALIERO'].dt.total_seconds() / 3600
-        # Applica la funzione al saldo giornaliero per formattare le etichette
-        df_settimanale['SALDO_GIORNALIERO_FORMATTED'] = df_settimanale['SALDO GIORNALIERO'].apply(format_saldo)
-        # Crea una lista di colori in base ai valori positivi o negativi
-        colors = ['mediumseagreen' if x >= 0 else 'firebrick' for x in df_settimanale['SALDO_GIORNALIERO_ORE']]        
-        # Crea il grafico manualmente con go.Bar
-        fig = go.Figure(data=[
-            go.Bar(
-                x=df_settimanale['SETTIMANA'],
-                y=df_settimanale['SALDO_GIORNALIERO_ORE'],
-                text=df_settimanale['SALDO_GIORNALIERO_FORMATTED'],
-                textposition='outside',
-                marker_color=colors  # Applica il colore condizionale
+        with tab1:
+            # Converti timedelta in ore decimali per la rappresentazione numerica
+            df_settimanale['SALDO_GIORNALIERO_ORE'] = df_settimanale['SALDO GIORNALIERO'].dt.total_seconds() / 3600
+            # Applica la funzione al saldo giornaliero per formattare le etichette
+            df_settimanale['SALDO_GIORNALIERO_FORMATTED'] = df_settimanale['SALDO GIORNALIERO'].apply(format_saldo)
+            # Crea una lista di colori in base ai valori positivi o negativi
+            colors = ['mediumseagreen' if x >= 0 else 'firebrick' for x in df_settimanale['SALDO_GIORNALIERO_ORE']]        
+            # Crea il grafico manualmente con go.Bar
+            fig = go.Figure(data=[
+                go.Bar(
+                    x=df_settimanale['SETTIMANA'],
+                    y=df_settimanale['SALDO_GIORNALIERO_ORE'],
+                    text=df_settimanale['SALDO_GIORNALIERO_FORMATTED'],
+                    textposition='outside',
+                    marker_color=colors  # Applica il colore condizionale
+                )
+            ])
+
+            # Imposta il titolo del grafico
+            fig.update_layout(
+                # title_text='Saldo per settimana', 
+                yaxis_title='Saldo', 
+                xaxis_title='Settimana',
+                xaxis=dict(tickmode='linear'),  # Mostra tutti i tick sull'asse X
+                yaxis=dict(showticklabels=False),  # Nascondi tutti i tick sull'asse Y
             )
-        ])
+            
+            st.plotly_chart(fig)
 
-        # Imposta il titolo del grafico
-        fig.update_layout(
-            # title_text='Saldo per settimana', 
-            yaxis_title='Saldo', 
-            xaxis_title='Settimana',
-            xaxis=dict(tickmode='linear'),  # Mostra tutti i tick sull'asse X
-            yaxis=dict(showticklabels=False),  # Nascondi tutti i tick sull'asse Y
-        )
-        
-        st.plotly_chart(fig)
-
-    with tab2:
-        st.dataframe(
-            df_settimanale[['SETTIMANA','SALDO_SETT_FORMATTED']], 
-            use_container_width=True, 
-            hide_index=True,
-            column_config={"SALDO_SETT_FORMATTED": st.column_config.Column(label="SALDO SETTIMANALE (Ore:Minuti)")}
-        ) 
+        with tab2:
+            st.dataframe(
+                df_settimanale[['SETTIMANA','SALDO_SETT_FORMATTED']], 
+                use_container_width=True, 
+                hide_index=True,
+                column_config={"SALDO_SETT_FORMATTED": st.column_config.Column(label="SALDO SETTIMANALE (Ore:Minuti)")}
+            ) 
 
 with col2:
-
-    st.subheader("Dati aggregati per mese :bookmark_tabs:")
-    
-    tab1, tab2 = st.tabs(["Grafico", "Dati"])
-    
-    with tab1: 
-        # Converti timedelta in ore decimali per la rappresentazione numerica
-        df_mensile['SALDO_GIORNALIERO_ORE'] = df_mensile['SALDO GIORNALIERO'].dt.total_seconds() / 3600
-        # Applica la funzione al saldo giornaliero per formattare le etichette
-        df_mensile['SALDO_GIORNALIERO_FORMATTED'] = df_mensile['SALDO GIORNALIERO'].apply(format_saldo)
-        # Crea una lista di colori in base ai valori positivi o negativi
-        colors = ['mediumseagreen' if x >= 0 else 'firebrick' for x in df_mensile['SALDO_GIORNALIERO_ORE']]        
-        # Crea il grafico manualmente con go.Bar
-        fig = go.Figure(data=[
-            go.Bar(
-                x=df_mensile['MESE'],
-                y=df_mensile['SALDO_GIORNALIERO_ORE'],
-                text=df_mensile['SALDO_GIORNALIERO_FORMATTED'],
-                textposition='outside',
-                marker_color=colors  # Applica il colore condizionale
-            )
-        ])
-
-        # Imposta il titolo del grafico
-        fig.update_layout(
-            # title_text='Saldo per mese', 
-            yaxis_title='Saldo', 
-            xaxis_title='Mese',
-            xaxis=dict(tickmode='linear'),  # Mostra tutti i tick sull'asse X
-            yaxis=dict(showticklabels=False),  # Nascondi tutti i tick sull'asse Y
-        )
+    with st.container(border=True):
+        st.subheader(":bar_chart: Dati mensili")
         
-        st.plotly_chart(fig)
+        tab1, tab2 = st.tabs(["Grafico", "Dati"])
+        
+        with tab1: 
+            # Converti timedelta in ore decimali per la rappresentazione numerica
+            df_mensile['SALDO_GIORNALIERO_ORE'] = df_mensile['SALDO GIORNALIERO'].dt.total_seconds() / 3600
+            # Applica la funzione al saldo giornaliero per formattare le etichette
+            df_mensile['SALDO_GIORNALIERO_FORMATTED'] = df_mensile['SALDO GIORNALIERO'].apply(format_saldo)
+            # Crea una lista di colori in base ai valori positivi o negativi
+            colors = ['mediumseagreen' if x >= 0 else 'firebrick' for x in df_mensile['SALDO_GIORNALIERO_ORE']]        
+            # Crea il grafico manualmente con go.Bar
+            fig = go.Figure(data=[
+                go.Bar(
+                    x=df_mensile['MESE'],
+                    y=df_mensile['SALDO_GIORNALIERO_ORE'],
+                    text=df_mensile['SALDO_GIORNALIERO_FORMATTED'],
+                    textposition='outside',
+                    marker_color=colors  # Applica il colore condizionale
+                )
+            ])
 
-    with tab2:
-        st.dataframe(df_mensile[['MESE','SALDO_MENSILE_FORMATTED']], 
-            hide_index=True, 
-            use_container_width=True, 
-            column_config={"SALDO_MENSILE_FORMATTED": st.column_config.Column(label="SALDO MENSILE (Ore:Minuti)")})
+            # Imposta il titolo del grafico
+            fig.update_layout(
+                # title_text='Saldo per mese', 
+                yaxis_title='Saldo', 
+                xaxis_title='Mese',
+                xaxis=dict(tickmode='linear'),  # Mostra tutti i tick sull'asse X
+                yaxis=dict(showticklabels=False),  # Nascondi tutti i tick sull'asse Y
+            )
+            
+            st.plotly_chart(fig)
+
+        with tab2:
+            st.dataframe(df_mensile[['MESE','SALDO_MENSILE_FORMATTED']], 
+                hide_index=True, 
+                use_container_width=True, 
+                column_config={"SALDO_MENSILE_FORMATTED": st.column_config.Column(label="SALDO MENSILE (Ore:Minuti)")})
