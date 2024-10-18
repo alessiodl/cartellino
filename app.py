@@ -1,11 +1,13 @@
+import locale
 import streamlit as st
 import pandas as pd
 import numpy as np
 from datetime import date, timedelta
 import plotly.express as px
 import plotly.graph_objects as go
-import locale
+
 locale.setlocale(locale.LC_TIME, 'it_IT.UTF-8')
+
 
 st.set_page_config(
     page_title="Cartellino",
