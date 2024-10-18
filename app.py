@@ -4,6 +4,8 @@ import numpy as np
 from datetime import date, timedelta
 import plotly.express as px
 import plotly.graph_objects as go
+import locale
+locale.setlocale(locale.LC_TIME, 'it_IT.UTF-8')
 
 st.set_page_config(
     page_title="Cartellino",
@@ -133,10 +135,10 @@ ddf['ORE RICHIESTE'] = pd.to_timedelta(ddf['ORE RICHIESTE'], unit='h')
 ddf['ORE RICHIESTE'] = ddf['ORE RICHIESTE'].apply(format_saldo)
 
 def row_color(row):
-    w_color = 'background-color: lightsalmon; color: white;'
-    f_color = 'background-color: crimson; color: white; font-weight: bold;'
-    v_color = 'background-color: mediumseagreen; color: white; font-weight: bold;'
-    p_color = 'background-color: olive; color: white; font-weight: bold;'
+    w_color = 'background-color: lightcoral; color: white;'
+    f_color = 'color: orangered; font-weight: 800;'
+    v_color = 'color: mediumseagreen; font-weight: 800;'
+    p_color = 'color: dodgerblue; font-weight: 800;'
     # Applica il colore 
     if row['GIORNO'] in ['SAB', 'DOM']:
         return [w_color] * len(row)
@@ -184,8 +186,8 @@ col1, col2 = st.columns(2)
 
 with col1:
 
-    st.subheader("Report settimanale :bookmark_tabs:")
-    st.text("Questa sezione mostra il saldo aggregato per settimana")
+    st.subheader("Dati aggregati per settimana :bookmark_tabs:")
+
     tab1, tab2 = st.tabs(["Grafico", "Dati"])
     
     with tab1:
@@ -220,14 +222,15 @@ with col1:
     with tab2:
         st.dataframe(
             df_settimanale[['SETTIMANA','SALDO_SETT_FORMATTED']], 
-            hide_index=True, width=100000, 
+            use_container_width=True, 
+            hide_index=True,
             column_config={"SALDO_SETT_FORMATTED": st.column_config.Column(label="SALDO SETTIMANALE (Ore:Minuti)")}
         ) 
 
 with col2:
 
-    st.subheader("Report mensile :bookmark_tabs:")
-    st.text("Questa sezione mostra il saldo aggregato per mese")
+    st.subheader("Dati aggregati per mese :bookmark_tabs:")
+    
     tab1, tab2 = st.tabs(["Grafico", "Dati"])
     
     with tab1: 
@@ -261,6 +264,6 @@ with col2:
 
     with tab2:
         st.dataframe(df_mensile[['MESE','SALDO_MENSILE_FORMATTED']], 
-                     hide_index=True, 
-                     width=100000,
-                     column_config={"SALDO_MENSILE_FORMATTED": st.column_config.Column(label="SALDO MENSILE (Ore:Minuti)")})
+            hide_index=True, 
+            use_container_width=True, 
+            column_config={"SALDO_MENSILE_FORMATTED": st.column_config.Column(label="SALDO MENSILE (Ore:Minuti)")})
