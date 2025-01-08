@@ -140,6 +140,8 @@ def row_color(row):
     f_color = 'color: orangered; font-weight: 800;'
     v_color = 'color: mediumseagreen; font-weight: 800;'
     p_color = 'color: dodgerblue; font-weight: 800;'
+    m_color = 'color: slateblue; font-weight: 800;'
+    d_color = 'color: red; font-weight: 800;'
     # Applica il colore 
     if row['GIORNO'] in ['SAB', 'DOM']:
         return [w_color] * len(row)
@@ -147,6 +149,10 @@ def row_color(row):
         return [f_color] * len(row)
     elif row['TIPOLOGIA'] == 'FERIE':
         return [v_color] * len(row)
+    elif row['TIPOLOGIA'] == 'MALATTIA':
+        return [m_color] * len(row)
+    elif row['TIPOLOGIA'] == 'DONAZIONE':
+        return [d_color] * len(row)
     elif row['TIPOLOGIA'] == 'PERMESSO' or row['TIPOLOGIA'] == 'VISITA MEDICA' or row['TIPOLOGIA'] == 'RECUPERO ORE RICERCATORI':
         return [p_color] * len(row)
     else:
