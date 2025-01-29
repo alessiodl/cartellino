@@ -3,6 +3,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from datetime import date, timedelta
+import calendar
 import plotly.express as px
 import plotly.graph_objects as go
 
@@ -18,12 +19,20 @@ st.set_page_config(
 st.header("My Cartellino", divider=True)
 st.markdown("I dati utilizzati in questa applicazione provengono da Google Sheets e vengono aggiornati quotidianamente")
 
+# Ddata corrente
+today = date.today()
+# Ultimo giorno del mese corrente
+last_day_of_month = calendar.monthrange(today.year, today.month)[1]
+
+
 if 'date_from' not in st.session_state:
     # st.session_state.date_from = date.today() - timedelta(days=7)
     st.session_state.date_from = date(2025, 1, 1)
 if 'date_to' not in st.session_state:
     # st.session_state.date_to = date.today() + timedelta(days=7)
-    st.session_state.date_to = date(2025, 1, 31)
+    # st.session_state.date_to = date(2025, 1, 31)
+    # Imposta date_to come l'ultimo giorno del mese corrente
+    st.session_state.date_to = date(today.year, today.month, last_day_of_month)
 
 def validate_dates(date_from, date_to):
     if date_from >= date_to:
