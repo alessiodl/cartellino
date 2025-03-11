@@ -1,5 +1,6 @@
 import locale
 import streamlit as st
+import pathlib
 import pandas as pd
 import numpy as np
 from datetime import date, timedelta
@@ -21,7 +22,8 @@ def load_css(file_name):
         st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
 # Load and apply the CSS file at the start of your app
-load_css('style.css')
+css_path = pathlib.Path("assets/style.css")
+load_css(css_path)
 
 st.header("My Cartellino", divider=True)
 st.markdown("I dati utilizzati in questa applicazione provengono da Google Sheets e vengono aggiornati quotidianamente")
