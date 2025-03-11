@@ -15,6 +15,13 @@ st.set_page_config(
     page_icon=":clock1:",
     layout="wide"
 )
+# Function to load and apply CSS
+def load_css(file_name):
+    with open(file_name) as f:
+        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+
+# Load and apply the CSS file at the start of your app
+load_css('style.css')
 
 st.header("My Cartellino", divider=True)
 st.markdown("I dati utilizzati in questa applicazione provengono da Google Sheets e vengono aggiornati quotidianamente")
