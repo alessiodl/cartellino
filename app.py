@@ -26,7 +26,7 @@ css_path = pathlib.Path("assets/style.css")
 load_css(css_path)
 
 st.header("My Cartellino", divider=True)
-st.markdown("I dati utilizzati in questa applicazione provengono da Google Sheets e vengono aggiornati quotidianamente")
+st.markdown("I dati utilizzati in questa applicazione provengono da Google Sheets e sono puramente dimostrativi. I dati reali non sono visualizzati per motivi di privacy.")
 
 # Ddata corrente
 today = date.today()
