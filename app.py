@@ -57,7 +57,7 @@ df = pd.read_csv("https://docs.google.com/spreadsheets/d/15HoJRe3AGq3VAgXN8gcO3c
 # Converti la colonna 'DATA' in formato datetime, se non lo è già
 df['DATA'] = pd.to_datetime(df['DATA'])
 
-st.logo(image="images/izs_marchio.png", size="large")
+st.logo(image="images/izs_marchio.png")
 
 with st.sidebar:
 
