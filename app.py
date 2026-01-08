@@ -25,6 +25,8 @@ def load_css(file_name):
 css_path = pathlib.Path("assets/style.css")
 load_css(css_path)
 
+st.logo(image="images/izs_marchio.png")
+
 st.header("My Cartellino", divider=True)
 st.markdown("I dati utilizzati in questa applicazione provengono da Google Sheets e sono puramente dimostrativi. I dati reali non sono visualizzati per motivi di privacy.")
 
@@ -57,7 +59,7 @@ df = pd.read_csv("https://docs.google.com/spreadsheets/d/15HoJRe3AGq3VAgXN8gcO3c
 # Converti la colonna 'DATA' in formato datetime, se non lo è già
 df['DATA'] = pd.to_datetime(df['DATA'])
 
-st.logo(image="images/izs_marchio.png")
+
 
 with st.sidebar:
 
