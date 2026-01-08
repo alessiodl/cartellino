@@ -183,27 +183,27 @@ ddf.fillna('-', inplace=True)
 
 # Streamlit app
 # #################################
-with st.container("border=True"):
-    st.subheader(":calendar: Registrazioni giornaliere")
-    st.dataframe(
-        ddf.style.apply(row_color, axis=1),
-        column_config={
-            "DATA": st.column_config.DateColumn(
-                format="DD/MM/YYYY"
-            ),
-            "SALDO_GIORNALIERO_FORMATTED": st.column_config.Column(
-                label="SALDO GIORNALIERO",    
-            ),
-            "DOVUTO_GIORNALIERO_FORMATTED": st.column_config.Column(
-                label="DOVUTO GIORNALIERO",
-            ),
-            "ORE_LAVORATE_FORMATTED": st.column_config.Column(
-                label="ORE LAVORATE",
-            )
-        }, 
-        use_container_width=True, 
-        hide_index=True
-    )
+
+st.subheader(":calendar: Registrazioni giornaliere")
+st.dataframe(
+    ddf.style.apply(row_color, axis=1),
+    column_config={
+        "DATA": st.column_config.DateColumn(
+            format="DD/MM/YYYY"
+        ),
+        "SALDO_GIORNALIERO_FORMATTED": st.column_config.Column(
+            label="SALDO GIORNALIERO",    
+        ),
+        "DOVUTO_GIORNALIERO_FORMATTED": st.column_config.Column(
+            label="DOVUTO GIORNALIERO",
+        ),
+        "ORE_LAVORATE_FORMATTED": st.column_config.Column(
+            label="ORE LAVORATE",
+        )
+    }, 
+    use_container_width=True, 
+    hide_index=True
+    
 
 with st.container(border=True):
     st.subheader(":chart_with_upwards_trend: Saldo Generale nel periodo selezionato")
