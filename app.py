@@ -36,7 +36,7 @@ last_day_of_month = calendar.monthrange(today.year, today.month)[1]
 
 if 'date_from' not in st.session_state:
     # st.session_state.date_from = date.today() - timedelta(days=7)
-    st.session_state.date_from = date(2025, 1, 1)
+    st.session_state.date_from = date(2026, 1, 1)
 if 'date_to' not in st.session_state:
     # st.session_state.date_to = date.today() + timedelta(days=7)
     # st.session_state.date_to = date(2025, 1, 31)
