@@ -183,7 +183,7 @@ ddf.fillna('-', inplace=True)
 
 # Streamlit app
 # #################################
-with st.expander("Dati del cartellino", expanded=True):
+with st.container("Dati del cartellino"):
     st.subheader(":calendar: Registrazioni giornaliere")
     st.dataframe(
         ddf.style.apply(row_color, axis=1),
