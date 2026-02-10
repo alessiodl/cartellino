@@ -59,7 +59,9 @@ df = pd.read_csv("https://docs.google.com/spreadsheets/d/15HoJRe3AGq3VAgXN8gcO3c
 # Converti la colonna 'DATA' in formato datetime, se non lo è già
 df['DATA'] = pd.to_datetime(df['DATA'])
 
-
+# Se ORE RICHIESTE è nel formato "HH:mm" (es. "01:30")
+df['ORE RICHIESTE'] = df['ORE RICHIESTE'].fillna("00:00").astype(str)
+df['ORE RICHIESTE_TD'] = pd.to_timedelta(df['ORE RICHIESTE'])
 
 with st.sidebar:
 
@@ -82,7 +84,12 @@ df['SETTIMANA'] = df['DATA'].dt.isocalendar().week
 # Calcolo del dovuto giornaliero in base alle condizioni
 df['DOVUTO GIORNALIERO'] = pd.to_timedelta(0, unit='s')
 df.loc[(df['TIPOLOGIA'] == 'SMART WORKING') | (df['TIPOLOGIA'] == 'PESCARA') | (df['TIPOLOGIA'] == 'TERAMO') | (df['TIPOLOGIA'] == 'MISSIONE'), 'DOVUTO GIORNALIERO'] = pd.to_timedelta(25920, unit='s')
-df.loc[(df['TIPOLOGIA'] == 'PERMESSO') | (df['TIPOLOGIA'] == 'VISITA MEDICA') | (df['TIPOLOGIA'] == 'RECUPERO ORE RICERCATORI'), 'DOVUTO GIORNALIERO'] = pd.to_timedelta(25920, unit='s') - pd.to_timedelta(df['ORE RICHIESTE'], unit='h')
+df.loc[
+(df['TIPOLOGIA'] == 'PERMESSO') | 
+(df['TIPOLOGIA'] == 'VISITA MEDICA') | 
+(df['TIPOLOGIA'] == 'RECUPERO ORE RICERCATORI'), 
+'DOVUTO GIORNALIERO'
+] = pd.to_timedelta(25920, unit='s') - df['ORE RICHIESTE_TD']
 
 # Calcolo delle ore lavorate
 def calcola_ore_lavorate(row):
