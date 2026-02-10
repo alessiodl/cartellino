@@ -63,6 +63,39 @@ df = pd.read_csv(
 # Converti la colonna 'DATA' in formato datetime, se non lo è già
 df['DATA'] = pd.to_datetime(df['DATA'])
 
+import re
+
+def parse_ore_richieste(x) -> pd.Timedelta:
+    """
+    Accetta:
+      - numeri (4, 5) -> 4h, 5h
+      - stringhe 'HH:mm' o 'H:mm' (7:12, 04:00) -> timedelta
+      - stringhe 'HH:mm:ss' -> timedelta
+      - vuoti / '-' -> 0
+    """
+    if pd.isna(x):
+        return pd.Timedelta(0)
+
+    s = str(x).strip()
+
+    # vuoti/placeholder
+    if s in ("", "-", "—", "nan", "None"):
+        return pd.Timedelta(0)
+
+    # formato H:mm o HH:mm o HH:mm:ss
+    if re.match(r"^\d{1,2}:\d{2}(:\d{2})?$", s):
+        td = pd.to_timedelta(s, errors="coerce")
+        return td if not pd.isna(td) else pd.Timedelta(0)
+
+    # formato numerico (ore intere, o anche "4.0", "4,5")
+    s2 = s.replace(",", ".")
+    try:
+        h = float(s2)
+        return pd.to_timedelta(h, unit="h")
+    except ValueError:
+        return pd.Timedelta(0)
+
+df["ORE RICHIESTE_TD"] = df["ORE RICHIESTE"].apply(parse_ore_richieste)
 
 
 with st.sidebar:
@@ -103,7 +136,7 @@ df.loc[
     (df['TIPOLOGIA'] == 'VISITA MEDICA') |
     (df['TIPOLOGIA'] == 'RECUPERO ORE RICERCATORI'),
     'DOVUTO GIORNALIERO'
-] = pd.to_timedelta(25920, unit='s') - pd.to_timedelta(df['ORE RICHIESTE'], unit='h')
+] = pd.to_timedelta(25920, unit='s') - df['ORE RICHIESTE_TD']
 
 
 # Calcolo delle ore lavorate
@@ -200,9 +233,9 @@ ddf = df[['DATA', 'GIORNO', 'SETTIMANA', 'TIPOLOGIA', 'DETTAGLI',
           'ORE_LAVORATE_FORMATTED',
           'SALDO_GIORNALIERO_FORMATTED']].copy()
 
-ddf['ORE RICHIESTE'] = pd.to_timedelta(ddf['ORE RICHIESTE'], unit='h')
-ddf['ORE RICHIESTE'] = ddf['ORE RICHIESTE'].apply(format_saldo)
-
+#ddf['ORE RICHIESTE'] = pd.to_timedelta(ddf['ORE RICHIESTE'], unit='h')
+#ddf['ORE RICHIESTE'] = ddf['ORE RICHIESTE'].apply(format_saldo)
+ddf['ORE RICHIESTE'] = df['ORE RICHIESTE_TD'].apply(format_saldo)
 
 def row_color(row):
     w_color = 'background-color: lightcoral; color: white;'
