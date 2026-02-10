@@ -7,9 +7,9 @@ from datetime import date, timedelta
 import calendar
 import plotly.express as px
 import plotly.graph_objects as go
+import re
 
 locale.setlocale(locale.LC_TIME, 'it_IT.UTF-8')
-
 
 st.set_page_config(
     page_title="My Cartellino",
@@ -54,6 +54,36 @@ def validate_dates(date_from, date_to):
 # #################################
 df = pd.read_csv("https://docs.google.com/spreadsheets/d/15HoJRe3AGq3VAgXN8gcO3cF0vfezPR6t0LvTc2R4WFo/export?format=csv&gid=896724717", parse_dates=['DATA'], date_format='%d/%m/%Y')
 
+import re
+import numpy as np
+import pandas as pd
+
+def parse_ore_richieste_to_timedelta(x):
+    if pd.isna(x):
+        return pd.Timedelta(0)
+
+    s = str(x).strip()
+
+    # valori "vuoti" tipici
+    if s in ("", "-", "—", "nan", "None"):
+        return pd.Timedelta(0)
+
+    # formato HH:mm oppure HH:mm:ss
+    if re.match(r"^\d{1,2}:\d{2}(:\d{2})?$", s):
+        return pd.to_timedelta(s)
+
+    # formato ore decimali (1.5 / 1,5)
+    s2 = s.replace(",", ".")
+    try:
+        h = float(s2)
+        return pd.to_timedelta(h, unit="h")
+    except ValueError:
+        # se proprio non si capisce, 0 (oppure NaT se preferisci)
+        return pd.Timedelta(0)
+
+df["ORE RICHIESTE_TD"] = df["ORE RICHIESTE"].apply(parse_ore_richieste_to_timedelta)
+
+
 # Elaborazione dati di input
 # #################################
 # Converti la colonna 'DATA' in formato datetime, se non lo è già
@@ -85,10 +115,8 @@ df['SETTIMANA'] = df['DATA'].dt.isocalendar().week
 df['DOVUTO GIORNALIERO'] = pd.to_timedelta(0, unit='s')
 df.loc[(df['TIPOLOGIA'] == 'SMART WORKING') | (df['TIPOLOGIA'] == 'PESCARA') | (df['TIPOLOGIA'] == 'TERAMO') | (df['TIPOLOGIA'] == 'MISSIONE'), 'DOVUTO GIORNALIERO'] = pd.to_timedelta(25920, unit='s')
 df.loc[
-(df['TIPOLOGIA'] == 'PERMESSO') | 
-(df['TIPOLOGIA'] == 'VISITA MEDICA') | 
-(df['TIPOLOGIA'] == 'RECUPERO ORE RICERCATORI'), 
-'DOVUTO GIORNALIERO'
+    (df['TIPOLOGIA'].isin(['PERMESSO','VISITA MEDICA','RECUPERO ORE RICERCATORI'])),
+    'DOVUTO GIORNALIERO'
 ] = pd.to_timedelta(25920, unit='s') - df['ORE RICHIESTE_TD']
 
 # Calcolo delle ore lavorate
