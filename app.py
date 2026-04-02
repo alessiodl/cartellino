@@ -261,7 +261,15 @@ def row_color(row):
         return [''] * len(row)
 
 
-ddf.fillna('-', inplace=True)
+text_cols = [
+    'GIORNO', 'TIPOLOGIA', 'DETTAGLI', 'ORE RICHIESTE',
+    'ENTRATA_1', 'ENTRATA_2', 'USCITA_1', 'USCITA_2', 'PAUSA',
+    'DOVUTO_GIORNALIERO_FORMATTED',
+    'ORE_LAVORATE_FORMATTED',
+    'SALDO_GIORNALIERO_FORMATTED'
+]
+
+ddf[text_cols] = ddf[text_cols].astype('string').fillna('-')
 
 
 # Streamlit app
